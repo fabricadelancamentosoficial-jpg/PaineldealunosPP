@@ -1,0 +1,658 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1"><style>:root{color-scheme:light}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}</style></head><body>
+<title>Painel de Alunos</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: #120f0a;
+    color: #fff;
+    padding: 24px 16px 60px;
+    line-height: 1.6;
+  }
+  .container { max-width: 920px; margin: 0 auto; }
+
+  .header {
+    background: linear-gradient(135deg, #1c1710 0%, #3d2f14 55%, #6b4f1e 100%);
+    border-radius: 16px;
+    padding: 40px 32px;
+    margin-bottom: 24px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+  }
+  .header h1 { font-size: 28px; font-weight: 700; margin-bottom: 6px; }
+  .header .sub { font-size: 13.5px; color: rgba(255, 255, 255, 0.6); }
+
+  .stat-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 24px; }
+  .num-box { text-align: center; padding: 18px 12px; background: #1c170f; border: 1px solid #4a3a1f; border-radius: 12px; }
+  .num-box .num { font-size: 28px; font-weight: 700; color: #d9b56e; margin-bottom: 2px; }
+  .num-box .label { font-size: 10.5px; color: rgba(255, 255, 255, 0.55); text-transform: uppercase; letter-spacing: 0.5px; }
+
+  .toolbar { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 16px; }
+  .add-btn {
+    font-size: 12.5px; padding: 9px 18px; border-radius: 24px; border: 1.5px solid #c9a15a;
+    background: #c9a15a; color: #120f0a; cursor: pointer; font-family: inherit; font-weight: 700;
+  }
+  .add-btn:hover { background: #e8bf72; }
+  .add-btn.secundario { background: transparent; color: #d9b56e; }
+  .add-btn.secundario:hover { background: rgba(201, 161, 90, 0.12); }
+
+  .aviso-local {
+    font-size: 11.5px; color: rgba(255, 255, 255, 0.4); margin-bottom: 16px; padding: 10px 14px;
+    background: #1c170f; border: 1px solid #4a3a1f; border-radius: 8px;
+  }
+
+  .form-panel {
+    display: none; background: #1c170f; border: 1px solid #c9a15a; border-radius: 14px;
+    padding: 22px 24px; margin-bottom: 20px;
+  }
+  .form-panel.aberto { display: block; }
+  .form-panel h3 { font-size: 15px; margin-bottom: 14px; color: #e8bf72; }
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 14px; }
+  .form-field { display: flex; flex-direction: column; gap: 4px; }
+  .form-field.full { grid-column: 1 / -1; }
+  .form-field label { font-size: 10.5px; color: rgba(255, 255, 255, 0.55); text-transform: uppercase; letter-spacing: 0.4px; }
+  .form-field input, .form-field select {
+    font-family: inherit; font-size: 13px; padding: 9px 11px; border-radius: 8px; border: 1px solid #4a3a1f;
+    background: #14110a; color: #fff;
+  }
+  .form-field input:focus, .form-field select:focus { outline: none; border-color: #c9a15a; }
+  .form-actions { display: flex; gap: 10px; }
+
+  .filters { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 20px; }
+  .filter-btn {
+    font-size: 12px; padding: 8px 16px; border-radius: 24px; border: 1.5px solid #4a3a1f;
+    background: #1c170f; color: rgba(255, 255, 255, 0.6); cursor: pointer; font-family: inherit; font-weight: 500;
+  }
+  .filter-btn:hover { border-color: #c9a15a; color: #fff; }
+  .filter-btn.active { background: #c9a15a; color: #120f0a; border-color: #c9a15a; font-weight: 700; }
+
+  .relatorio-controls { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 16px; }
+  .relatorio-controls select, .relatorio-controls input {
+    font-family: inherit; font-size: 12.5px; padding: 8px 12px; border-radius: 8px; border: 1px solid #4a3a1f;
+    background: #1c170f; color: #fff;
+  }
+  .relatorio-controls select:focus, .relatorio-controls input:focus { outline: none; border-color: #c9a15a; }
+  .relatorio-controls input { flex: 1; min-width: 160px; }
+
+  .tabela-wrap { overflow-x: auto; background: #1c170f; border: 1px solid #4a3a1f; border-radius: 14px; }
+  table.relatorio { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+  table.relatorio th {
+    text-align: left; font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.4px;
+    color: rgba(255, 255, 255, 0.5); padding: 12px 16px; border-bottom: 1px solid #4a3a1f; white-space: nowrap;
+  }
+  table.relatorio td { padding: 10px 16px; border-bottom: 1px solid #2a2213; vertical-align: middle; }
+  table.relatorio tr:last-child td { border-bottom: none; }
+  table.relatorio tr:hover td { background: rgba(201, 161, 90, 0.05); }
+  .status-chip {
+    font-size: 10.5px; padding: 4px 12px; border-radius: 14px; display: inline-flex; align-items: center;
+    gap: 5px; cursor: pointer; white-space: nowrap; font-family: inherit;
+  }
+  .status-chip.entregue { background: rgba(201, 161, 90, 0.18); color: #e8bf72; border: 1px solid #c9a15a; }
+  .status-chip.pendente { background: rgba(255, 255, 255, 0.06); color: rgba(255, 255, 255, 0.5); border: 1px solid #4a3a1f; }
+  .relatorio-vazio { padding: 30px !important; text-align: center; color: rgba(255, 255, 255, 0.4); }
+
+  .aluno-card { background: #1c170f; border: 1px solid #4a3a1f; border-radius: 14px; padding: 22px 24px; margin-bottom: 14px; }
+  .aluno-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; flex-wrap: wrap; margin-bottom: 14px; }
+  .aluno-name { font-size: 17px; font-weight: 700; }
+  .aluno-meta { font-size: 12.5px; color: rgba(255, 255, 255, 0.5); margin-top: 2px; }
+  .aluno-top-right { display: flex; flex-direction: column; align-items: flex-end; gap: 6px; }
+  .fase-badge {
+    font-size: 10.5px; font-weight: 700; letter-spacing: 0.6px; text-transform: uppercase;
+    padding: 5px 12px; border-radius: 20px; white-space: nowrap;
+  }
+  .fase-posicionamento { background: rgba(201, 161, 90, 0.16); color: #d9b56e; border: 1px solid rgba(201, 161, 90, 0.4); }
+  .fase-entrega { background: rgba(201, 161, 90, 0.28); color: #e8bf72; border: 1px solid #c9a15a; }
+  .fase-venda { background: #c9a15a; color: #120f0a; border: 1px solid #c9a15a; }
+  .fase-concluindo { background: rgba(255, 255, 255, 0.1); color: #fff; border: 1px solid rgba(255, 255, 255, 0.25); }
+  .remover-btn {
+    font-size: 10.5px; color: rgba(255, 255, 255, 0.35); background: none; border: none; cursor: pointer;
+    font-family: inherit; text-decoration: underline; padding: 0;
+  }
+  .remover-btn:hover { color: #e0725a; }
+
+  .sessoes-row { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px; }
+  .sessao-chip {
+    font-size: 11.5px; padding: 5px 11px; border-radius: 8px; display: flex; align-items: center; gap: 6px;
+    background: #14110a; border: 1px solid #4a3a1f; color: rgba(255, 255, 255, 0.7); cursor: pointer; font-family: inherit;
+  }
+  .sessao-chip:hover { border-color: #c9a15a; }
+  .sessao-dot { width: 6px; height: 6px; border-radius: 50%; }
+  .dot-concluida { background: #c9a15a; }
+  .dot-agendada { background: transparent; border: 1.5px solid #c9a15a; }
+  .dot-aagendar { background: transparent; border: 1.5px solid rgba(255, 255, 255, 0.3); }
+
+  .pilares { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 14px; }
+  .pilar-block { cursor: pointer; }
+  .pilar-label { display: flex; justify-content: space-between; font-size: 11.5px; color: rgba(255, 255, 255, 0.6); margin-bottom: 6px; }
+  .pilar-label .pct { color: #d9b56e; font-weight: 700; }
+  .pilar-label .seta { color: rgba(255, 255, 255, 0.35); font-size: 9px; margin-left: 4px; }
+  .pilar-bar-track { background: #14110a; border-radius: 6px; height: 6px; overflow: hidden; }
+  .pilar-bar-fill { height: 100%; background: linear-gradient(90deg, #6b5225, #e8bf72); border-radius: 6px; }
+
+  .checklist-detail {
+    display: none; margin-top: 10px; padding: 10px 12px; background: #14110a;
+    border: 1px solid #2a2213; border-radius: 8px;
+  }
+  .checklist-detail.aberto { display: block; }
+  .checklist-item {
+    font-size: 11.5px; display: flex; align-items: center; gap: 7px; padding: 4px 4px;
+    color: rgba(255, 255, 255, 0.5); cursor: pointer; border-radius: 5px;
+  }
+  .checklist-item:hover { background: rgba(201, 161, 90, 0.08); color: rgba(255, 255, 255, 0.8); }
+  .checklist-item.entregue { color: rgba(255, 255, 255, 0.9); }
+  .check-icon { width: 13px; text-align: center; font-size: 11px; color: #4a3a1f; }
+  .checklist-item.entregue .check-icon { color: #d9b56e; }
+
+  .proxima-acao {
+    font-size: 12.5px; color: rgba(255, 255, 255, 0.75); padding-top: 12px; border-top: 1px solid #2a2213;
+  }
+  .proxima-acao strong { color: #d9b56e; }
+
+  .footer { text-align: center; padding: 24px 10px; font-size: 12px; color: rgba(255, 255, 255, 0.25); }
+
+  @media (max-width: 600px) {
+    .stat-row { grid-template-columns: repeat(2, 1fr); }
+    .pilares { grid-template-columns: 1fr; }
+  }
+</style>
+<div class="container">
+
+  <div class="header">
+    <h1>Painel de Alunos</h1>
+    <div class="sub">Do Plantão ao Milhão — visão de todos os mentorados ativos. O % de cada pilar é calculado automaticamente a partir da checklist de ferramentas — clique na barra para ver o que está marcado.</div>
+  </div>
+
+  <div class="stat-row" id="statRow"></div>
+
+  <div class="aviso-local">⚠ Este painel funciona ao vivo na tela (marcar itens, sessões e adicionar mentorados atualiza tudo na hora), mas não salva sozinho — se fechar ou atualizar a página, volta para os dados de exemplo.</div>
+
+  <div class="toolbar">
+    <button class="add-btn" id="btnNovo">+ Adicionar mentorado</button>
+    <div class="filters" id="vistaSwitch"></div>
+  </div>
+
+  <div class="form-panel" id="formNovo">
+    <h3>Novo mentorado</h3>
+    <div class="form-grid">
+      <div class="form-field"><label>Nome</label><input type="text" id="fNome" placeholder="Dra. / Dr. Nome"></div>
+      <div class="form-field"><label>Especialidade</label><input type="text" id="fEspecialidade" placeholder="Ex: Cardiologia"></div>
+      <div class="form-field">
+        <label>Estágio</label>
+        <select id="fEstagio">
+          <option>Com consultório</option>
+          <option>Sem consultório</option>
+          <option>Parcial — divide espaço</option>
+        </select>
+      </div>
+      <div class="form-field"><label>Semana do programa</label><input type="number" id="fSemana" value="1" min="1" max="26"></div>
+      <div class="form-field">
+        <label>Fase inicial</label>
+        <select id="fFase">
+          <option value="posicionamento">Fase 1 · Posicionamento</option>
+          <option value="entrega">Fase 2 · Entrega</option>
+          <option value="venda">Fase 3 · Venda</option>
+        </select>
+      </div>
+      <div class="form-field full"><label>Próxima ação</label><input type="text" id="fProximaAcao" placeholder="Ex: Sessão 1 — diagnóstico inicial"></div>
+    </div>
+    <div class="form-actions">
+      <button class="add-btn" id="btnSalvarNovo">Adicionar</button>
+      <button class="add-btn secundario" id="btnCancelarNovo">Cancelar</button>
+    </div>
+  </div>
+
+  <div id="cardsView">
+    <div class="filters" id="filters"></div>
+    <div id="alunosList"></div>
+  </div>
+
+  <div id="relatorioView" style="display:none;">
+    <div class="relatorio-controls">
+      <select id="rFiltroPilar">
+        <option value="todos">Todos os pilares</option>
+        <option value="posicionamento">Posicionamento</option>
+        <option value="entrega">Entrega</option>
+        <option value="venda">Venda</option>
+      </select>
+      <select id="rFiltroStatus">
+        <option value="todos">Todos os status</option>
+        <option value="pendente">Só pendentes</option>
+        <option value="entregue">Só entregues</option>
+      </select>
+      <input type="text" id="rBusca" placeholder="Buscar por mentorado...">
+    </div>
+    <div class="tabela-wrap">
+      <table class="relatorio">
+        <thead><tr><th>Mentorado</th><th>Pilar</th><th>Ferramenta</th><th>Status</th></tr></thead>
+        <tbody id="relatorioBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="footer">Do Plantão ao Milhão · Painel de Alunos · Método PEV</div>
+
+</div>
+
+<script>
+  // Checklist mestre de ferramentas por pilar (mesma lista usada no Checklist de Ferramentas da operação interna).
+  // O % de cada mentorado NUNCA é digitado à mão — é sempre contado a partir do status de cada item aqui embaixo.
+  const ferramentasPadrao = {
+    posicionamento: [
+      "Diagnóstico de nicho e ICP",
+      "Mensagem de posicionamento (manifesto de marca)",
+      "Estratégia de conteúdo e canais",
+      "Guia de estruturação inicial (para quem ainda não tem consultório)",
+      "Identidade visual e presença digital",
+      "Calendário de captação inicial",
+      "Plano de autoridade (imprensa, parcerias, eventos)",
+    ],
+    entrega: [
+      "Mapa da jornada do paciente",
+      "Roteiro de treinamento da secretária/equipe",
+      "Estrutura da consulta e retorno",
+      "Programa de indicação",
+      "Desenho de produtos de acompanhamento (upsell/LTV)",
+      "Protocolo de pós-consulta e fidelização",
+    ],
+    venda: [
+      "Estrutura comercial (funil e papéis)",
+      "Precificação e ticket",
+      "Script e técnicas de venda ao paciente",
+      "Matriz de objeções",
+      "Processo de fechamento e agenda particular",
+      "Plano de upsell e recompra",
+    ],
+  };
+
+  // Gera a checklist de um mentorado a partir da lista padrão, marcando quais itens já foram entregues.
+  // "entreguesPorPilar" é o único lugar onde se digita algo — o resto (%, barras, contagem) é sempre calculado.
+  function montarChecklist(entreguesPorPilar) {
+    const checklist = {};
+    Object.keys(ferramentasPadrao).forEach(pilar => {
+      checklist[pilar] = ferramentasPadrao[pilar].map((nome, i) => ({
+        nome,
+        status: i < entreguesPorPilar[pilar] ? "entregue" : "pendente",
+      }));
+    });
+    return checklist;
+  }
+
+  // Dados de exemplo — a equipe atualiza os números de "entregues" por pilar conforme o andamento real.
+  const alunos = [
+    {
+      nome: "Dra. Carolina Ferraz",
+      especialidade: "Dermatologia",
+      estagio: "Com consultório",
+      semana: 6,
+      fase: "posicionamento",
+      faseLabel: "Fase 1 · Posicionamento",
+      sessoes: [
+        { label: "Sessão 1", status: "concluida" },
+        { label: "Sessão 2", status: "agendada" },
+        { label: "Sessão 3", status: "aagendar" },
+      ],
+      checklist: montarChecklist({ posicionamento: 4, entrega: 0, venda: 0 }),
+      proximaAcao: "Fechar moodboard de marca com o design antes da Sessão 2",
+    },
+    {
+      nome: "Dr. Rafael Nogueira",
+      especialidade: "Ortopedia",
+      estagio: "Sem consultório",
+      semana: 11,
+      fase: "entrega",
+      faseLabel: "Fase 2 · Entrega",
+      sessoes: [
+        { label: "Sessão 1", status: "concluida" },
+        { label: "Sessão 2", status: "concluida" },
+        { label: "Sessão 3", status: "aagendar" },
+      ],
+      checklist: montarChecklist({ posicionamento: 7, entrega: 2, venda: 0 }),
+      proximaAcao: "Validar Guia de Estruturação Inicial — ainda buscando o primeiro espaço de atendimento",
+    },
+    {
+      nome: "Dra. Beatriz Amorim",
+      especialidade: "Ginecologia",
+      estagio: "Com consultório",
+      semana: 20,
+      fase: "venda",
+      faseLabel: "Fase 3 · Venda",
+      sessoes: [
+        { label: "Sessão 1", status: "concluida" },
+        { label: "Sessão 2", status: "concluida" },
+        { label: "Sessão 3", status: "agendada" },
+      ],
+      checklist: montarChecklist({ posicionamento: 7, entrega: 6, venda: 3 }),
+      proximaAcao: "Revisar matriz de objeções antes de abrir a agenda de particular do próximo mês",
+    },
+    {
+      nome: "Dr. Thiago Salles",
+      especialidade: "Psiquiatria",
+      estagio: "Parcial — divide espaço",
+      semana: 2,
+      fase: "posicionamento",
+      faseLabel: "Fase 1 · Posicionamento",
+      sessoes: [
+        { label: "Sessão 1", status: "concluida" },
+        { label: "Sessão 2", status: "aagendar" },
+        { label: "Sessão 3", status: "aagendar" },
+      ],
+      checklist: montarChecklist({ posicionamento: 2, entrega: 0, venda: 0 }),
+      proximaAcao: "Definir nicho e mensagem-chave — ainda em aberto do diagnóstico inicial",
+    },
+    {
+      nome: "Dra. Helena Vasconcelos",
+      especialidade: "Endocrinologia",
+      estagio: "Com consultório",
+      semana: 24,
+      fase: "concluindo",
+      faseLabel: "Concluindo programa",
+      sessoes: [
+        { label: "Sessão 1", status: "concluida" },
+        { label: "Sessão 2", status: "concluida" },
+        { label: "Sessão 3", status: "concluida" },
+      ],
+      checklist: montarChecklist({ posicionamento: 7, entrega: 6, venda: 6 }),
+      proximaAcao: "Apresentar proposta de continuidade (comunidade paga)",
+    },
+  ];
+
+  const faseNomes = {
+    posicionamento: "Posicionamento",
+    entrega: "Entrega",
+    venda: "Venda",
+    concluindo: "Concluindo",
+  };
+
+  let filtroAtivo = "todos";
+  let checklistAberto = null; // "idxAluno-pilar" do checklist expandido no momento, ou null
+  let vistaAtiva = "cards"; // "cards" ou "relatorio"
+
+  // Único ponto de cálculo do %. Sempre conta itens "entregue" sobre o total da checklist — nunca um número fixo.
+  function pctPilar(aluno, pilar) {
+    const itens = aluno.checklist[pilar];
+    const entregues = itens.filter(i => i.status === "entregue").length;
+    return Math.round((entregues / itens.length) * 100);
+  }
+
+  function dotClass(status) {
+    if (status === "concluida") return "dot-concluida";
+    if (status === "agendada") return "dot-agendada";
+    return "dot-aagendar";
+  }
+
+  function statusTexto(status) {
+    if (status === "concluida") return "Concluída";
+    if (status === "agendada") return "Agendada";
+    return "A agendar";
+  }
+
+  function proximoStatusSessao(status) {
+    if (status === "aagendar") return "agendada";
+    if (status === "agendada") return "concluida";
+    return "aagendar";
+  }
+
+  function renderStats() {
+    const total = alunos.length;
+    const sessoesSemana = alunos.filter(a => a.sessoes.some(s => s.status === "agendada")).length;
+    const mediaPilar = (chave) => Math.round(alunos.reduce((acc, a) => acc + pctPilar(a, chave), 0) / total);
+
+    const stats = [
+      { num: total, label: "Mentorados ativos" },
+      { num: sessoesSemana, label: "Com sessão agendada" },
+      { num: mediaPilar("posicionamento") + "%", label: "Média Posicionamento" },
+      { num: mediaPilar("entrega") + "%", label: "Média Entrega" },
+    ];
+
+    document.getElementById("statRow").innerHTML = stats.map(s =>
+      `<div class="num-box"><div class="num">${s.num}</div><div class="label">${s.label}</div></div>`
+    ).join("");
+  }
+
+  function renderVistaSwitch() {
+    const opcoes = [
+      { key: "cards", label: "Ver como cards" },
+      { key: "relatorio", label: "Ver como relatório" },
+    ];
+    document.getElementById("vistaSwitch").innerHTML = opcoes.map(o =>
+      `<button class="filter-btn ${vistaAtiva === o.key ? "active" : ""}" data-vista="${o.key}">${o.label}</button>`
+    ).join("");
+
+    document.querySelectorAll("[data-vista]").forEach(btn => {
+      btn.addEventListener("click", () => {
+        vistaAtiva = btn.dataset.vista;
+        document.getElementById("cardsView").style.display = vistaAtiva === "cards" ? "" : "none";
+        document.getElementById("relatorioView").style.display = vistaAtiva === "relatorio" ? "" : "none";
+        renderVistaSwitch();
+        if (vistaAtiva === "relatorio") renderRelatorio();
+      });
+    });
+  }
+
+  // Achata a checklist de todos os mentorados numa lista única — mesma fonte de dados dos cards,
+  // só que numa visão tipo tabela pra escanear "quem ainda não tem X ferramenta" de uma vez.
+  function linhasRelatorio() {
+    const linhas = [];
+    alunos.forEach((a, ai) => {
+      ["posicionamento", "entrega", "venda"].forEach(p => {
+        a.checklist[p].forEach((item, ii) => {
+          linhas.push({ ai, aluno: a.nome, pilar: p, pilarLabel: faseNomes[p], ferramenta: item.nome, status: item.status, ii });
+        });
+      });
+    });
+    return linhas;
+  }
+
+  function renderRelatorio() {
+    const pilarF = document.getElementById("rFiltroPilar").value;
+    const statusF = document.getElementById("rFiltroStatus").value;
+    const busca = document.getElementById("rBusca").value.trim().toLowerCase();
+
+    let linhas = linhasRelatorio();
+    if (pilarF !== "todos") linhas = linhas.filter(l => l.pilar === pilarF);
+    if (statusF !== "todos") linhas = linhas.filter(l => l.status === statusF);
+    if (busca) linhas = linhas.filter(l => l.aluno.toLowerCase().includes(busca));
+
+    document.getElementById("relatorioBody").innerHTML = linhas.length
+      ? linhas.map(l => `
+        <tr>
+          <td>${l.aluno}</td>
+          <td>${l.pilarLabel}</td>
+          <td>${l.ferramenta}</td>
+          <td><span class="status-chip ${l.status}" data-item="${l.ai}-${l.pilar}-${l.ii}">${l.status === "entregue" ? "✓ Entregue" : "○ Pendente"}</span></td>
+        </tr>
+      `).join("")
+      : `<tr><td colspan="4" class="relatorio-vazio">Nenhum item encontrado com esse filtro.</td></tr>`;
+
+    document.querySelectorAll("#relatorioBody [data-item]").forEach(el => {
+      el.addEventListener("click", () => {
+        const [ai, pilar, ii] = el.dataset.item.split("-");
+        const item = alunos[ai].checklist[pilar][ii];
+        item.status = item.status === "entregue" ? "pendente" : "entregue";
+        renderStats();
+        renderRelatorio();
+      });
+    });
+  }
+
+  // Ponto único pra atualizar tudo depois de qualquer mudança de dado (marcar item, sessão, add/remover mentorado)
+  function refreshTudo() {
+    renderStats();
+    renderFilters();
+    renderAlunos();
+    if (vistaAtiva === "relatorio") renderRelatorio();
+  }
+
+  function renderFilters() {
+    const counts = { todos: alunos.length };
+    alunos.forEach(a => { counts[a.fase] = (counts[a.fase] || 0) + 1; });
+
+    const opcoes = [
+      { key: "todos", label: "Todos" },
+      { key: "posicionamento", label: "Fase Posicionamento" },
+      { key: "entrega", label: "Fase Entrega" },
+      { key: "venda", label: "Fase Venda" },
+      { key: "concluindo", label: "Concluindo" },
+    ].filter(o => o.key === "todos" || counts[o.key]);
+
+    document.getElementById("filters").innerHTML = opcoes.map(o =>
+      `<button class="filter-btn ${filtroAtivo === o.key ? 'active' : ''}" data-filtro="${o.key}">${o.label} (${counts[o.key] || 0})</button>`
+    ).join("");
+
+    document.querySelectorAll(".filter-btn").forEach(btn => {
+      btn.addEventListener("click", () => {
+        filtroAtivo = btn.dataset.filtro;
+        renderFilters();
+        renderAlunos();
+      });
+    });
+  }
+
+  function renderAlunos() {
+    const lista = filtroAtivo === "todos" ? alunos : alunos.filter(a => a.fase === filtroAtivo);
+    const idxOriginal = a => alunos.indexOf(a);
+
+    document.getElementById("alunosList").innerHTML = lista.map(a => {
+      const ai = idxOriginal(a);
+      return `
+      <div class="aluno-card">
+        <div class="aluno-top">
+          <div>
+            <div class="aluno-name">${a.nome}</div>
+            <div class="aluno-meta">${a.especialidade} · ${a.estagio} · Semana ${a.semana}</div>
+          </div>
+          <div class="aluno-top-right">
+            <span class="fase-badge fase-${a.fase}">${a.faseLabel}</span>
+            <button class="remover-btn" data-remover="${ai}">remover mentorado</button>
+          </div>
+        </div>
+
+        <div class="sessoes-row">
+          ${a.sessoes.map((s, si) => `
+            <span class="sessao-chip" data-sessao="${ai}-${si}"><span class="sessao-dot ${dotClass(s.status)}"></span>${s.label} — ${statusTexto(s.status)}</span>
+          `).join("")}
+        </div>
+
+        <div class="pilares">
+          ${["posicionamento", "entrega", "venda"].map(p => {
+            const pct = pctPilar(a, p);
+            const chave = `${ai}-${p}`;
+            const aberto = checklistAberto === chave;
+            const itens = a.checklist[p];
+            return `
+            <div>
+              <div class="pilar-block" data-toggle="${chave}">
+                <div class="pilar-label"><span>${faseNomes[p]}</span><span class="pct">${pct}% <span class="seta">${aberto ? "▲" : "▼"}</span></span></div>
+                <div class="pilar-bar-track"><div class="pilar-bar-fill" style="width:${pct}%"></div></div>
+              </div>
+              <div class="checklist-detail ${aberto ? "aberto" : ""}">
+                ${itens.map((i, ii) => `
+                  <div class="checklist-item ${i.status === "entregue" ? "entregue" : ""}" data-item="${ai}-${p}-${ii}">
+                    <span class="check-icon">${i.status === "entregue" ? "✓" : "○"}</span>${i.nome}
+                  </div>
+                `).join("")}
+              </div>
+            </div>
+          `;
+          }).join("")}
+        </div>
+
+        <div class="proxima-acao"><strong>Próxima ação:</strong> ${a.proximaAcao}</div>
+      </div>
+    `;
+    }).join("");
+
+    // Abre/fecha a checklist de um pilar
+    document.querySelectorAll("[data-toggle]").forEach(el => {
+      el.addEventListener("click", () => {
+        const chave = el.dataset.toggle;
+        checklistAberto = checklistAberto === chave ? null : chave;
+        renderAlunos();
+      });
+    });
+
+    // Marca/desmarca um item da checklist — isso é o que muda o % e a barra
+    document.querySelectorAll("[data-item]").forEach(el => {
+      el.addEventListener("click", (e) => {
+        e.stopPropagation();
+        const [ai, pilar, ii] = el.dataset.item.split("-");
+        const item = alunos[ai].checklist[pilar][ii];
+        item.status = item.status === "entregue" ? "pendente" : "entregue";
+        refreshTudo();
+      });
+    });
+
+    // Avança o status de uma sessão (a agendar → agendada → concluída → a agendar)
+    document.querySelectorAll("[data-sessao]").forEach(el => {
+      el.addEventListener("click", () => {
+        const [ai, si] = el.dataset.sessao.split("-");
+        const sessao = alunos[ai].sessoes[si];
+        sessao.status = proximoStatusSessao(sessao.status);
+        refreshTudo();
+      });
+    });
+
+    // Remove um mentorado do painel
+    document.querySelectorAll("[data-remover]").forEach(el => {
+      el.addEventListener("click", () => {
+        alunos.splice(Number(el.dataset.remover), 1);
+        refreshTudo();
+      });
+    });
+  }
+
+  const faseLabelPorChave = {
+    posicionamento: "Fase 1 · Posicionamento",
+    entrega: "Fase 2 · Entrega",
+    venda: "Fase 3 · Venda",
+  };
+
+  function abrirFormNovo() {
+    document.getElementById("formNovo").classList.add("aberto");
+  }
+  function fecharFormNovo() {
+    document.getElementById("formNovo").classList.remove("aberto");
+    ["fNome", "fEspecialidade", "fProximaAcao"].forEach(id => document.getElementById(id).value = "");
+    document.getElementById("fSemana").value = 1;
+  }
+
+  document.getElementById("btnNovo").addEventListener("click", abrirFormNovo);
+  document.getElementById("btnCancelarNovo").addEventListener("click", fecharFormNovo);
+
+  document.getElementById("btnSalvarNovo").addEventListener("click", () => {
+    const nome = document.getElementById("fNome").value.trim();
+    if (!nome) { document.getElementById("fNome").focus(); return; }
+
+    const fase = document.getElementById("fFase").value;
+
+    alunos.push({
+      nome,
+      especialidade: document.getElementById("fEspecialidade").value.trim() || "—",
+      estagio: document.getElementById("fEstagio").value,
+      semana: Number(document.getElementById("fSemana").value) || 1,
+      fase,
+      faseLabel: faseLabelPorChave[fase],
+      sessoes: [
+        { label: "Sessão 1", status: "aagendar" },
+        { label: "Sessão 2", status: "aagendar" },
+        { label: "Sessão 3", status: "aagendar" },
+      ],
+      checklist: montarChecklist({ posicionamento: 0, entrega: 0, venda: 0 }),
+      proximaAcao: document.getElementById("fProximaAcao").value.trim() || "Agendar sessão 1 — diagnóstico inicial",
+    });
+
+    fecharFormNovo();
+    refreshTudo();
+  });
+
+  document.getElementById("rFiltroPilar").addEventListener("change", renderRelatorio);
+  document.getElementById("rFiltroStatus").addEventListener("change", renderRelatorio);
+  document.getElementById("rBusca").addEventListener("input", renderRelatorio);
+
+  renderStats();
+  renderFilters();
+  renderAlunos();
+  renderVistaSwitch();
+  renderRelatorio();
+</script>
+
+</body></html>
